@@ -72,6 +72,12 @@ frame_width  = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
 frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 prev_time    = time.time()
 
+# Rolling FPS stats, printed periodically so real throughput can be measured
+fps_window_start = time.time()
+fps_frame_count   = 0
+FPS_REPORT_SEC    = 5
+
+print(f"Camera resolution: {frame_width}x{frame_height}")
 print(f"Logging vehicle speeds to {LOG_PATH}")
 print("Press 'q' to quit")
 
@@ -101,6 +107,13 @@ try:
         curr_time = time.time()
         fps       = 1.0 / max(curr_time - prev_time, 1e-6)
         prev_time = curr_time
+
+        fps_frame_count += 1
+        if curr_time - fps_window_start >= FPS_REPORT_SEC:
+            avg_fps = fps_frame_count / (curr_time - fps_window_start)
+            print(f"[perf] avg FPS over last {FPS_REPORT_SEC}s: {avg_fps:.1f}")
+            fps_window_start = curr_time
+            fps_frame_count = 0
 
         results = model.track(frame, persist=True, verbose=False, conf=0.4, classes=list(VEHICLE_CLASSES))
 
